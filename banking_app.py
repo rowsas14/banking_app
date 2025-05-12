@@ -1,4 +1,7 @@
 import os
+from datetime import datetime
+
+customer = {}
 
 #admin checking
 def check_admin():
@@ -13,8 +16,8 @@ def check_admin():
 #admin create
 def create_admin():
 
-    ad_username=input("--Ender admin user name---")
-    ad_password=input("--Ender admin password--")
+    ad_username=input("--Ender admin user name : ")
+    ad_password=input("--Ender admin password  : ")
 
     with open("admin_account.txt", "w") as file:
         file.write(f"{ad_username},{ad_password}")
@@ -49,7 +52,7 @@ def acc_number_create():
             last_line = lines[-1]
             last_acc_num = last_line.split()[2]  
             last_num = int(last_acc_num.replace("ACC", ""))
-            return f"ACC{last_num + 1:03}"
+            return f"ACC{last_num + 1:03}"  
     except FileNotFoundError:
         return "ACC001"
 
@@ -58,66 +61,231 @@ def acc_number_create():
 #account create
 
 def account_create():
-    customer={}
+    global customer
+  
     name=input("enter name")
-    age=input("enter age")
+    while True:
+         age=input("enter age")  
+         if not age.isdigit():
+             print("age is a number")
+         elif int(age) <= 0:
+             print("age is positive number")    
+         else:
+             break     
+    
+    
+    while True:
+        nic=input("enter your nic")
+        if not nic.isdigit():
+            print("nic only number")
+        elif len(nic) not in [9 , 12]:
+            print("NIC number 9 or 12 digit number")
+        else:
+            break
+        
+            
     account_num=acc_number_create()
-    initial_balance=float(input("enter amount"))
-    user_name=input("enster user name"),
+    while True:
+        initial_balance=float(input("enter amount"))
+        if initial_balance < 0:
+            print("\n amount is not negative \n")
+        else:
+            break    
+    balance=initial_balance    
+
+    
+    user_name=name[:3].lower() + "@" + nic[-3:]
     password=input("Enter password")
-    # user_id=input("enter id")
+    
+    now=datetime.now()
+    timestamp=now.strftime("%Y-%m-%d %H:%M:%S")
+
+  
     
     customer[account_num]={
         "Name":name,
         "Age":age,
+        "NIC":nic,
         "Account number_":account_num,
         "Initial_balance":  initial_balance,
+        "Balance":balance,
         "User Name":user_name,
         "password":password
     
                  
         }
     
-    with open("cutomer.txt","a") as file:
-        file.write(f"{name}{age:<5}{account_num:<5}{initial_balance:<5}{user_name:<5}{password:<5}\n")
+    
+    with open("customer.txt","a") as file:
+        file.write(f"{account_num}   {name}   {age}    {initial_balance}      {timestamp} \n")
         print(f"sucessfuly {name} and {account_num} created account")
+        
+    with open("acc details.txt","a") as file:
+        file.write(f"{account_num}  {user_name}    {password}   {initial_balance}  \n") 
+    
+
         
         
         
 # view all customer
 
 def view_all_customers():
-    
-    with open("custmoer.txt","r") as file:
-        customer=file.read()
-        if customer:
-            for account_num, customer_details in customer:
-                print(f"acc num:{account_num}, details:{customer_details}")
-                
+    try:
+        # Open the .txt file in read mode
+        with open("customer.txt", "r") as file:
+            data = file.readlines()
+        
+        # Check if data exists in the file
+        if  data:
+            print("Customer Data:")
+            print("accnum    name     age     balance      date")
+            for line in data:  
+                print(line.strip())  
         else:
-            print("file not found")        
-            
+           print("data not available")
+    except FileNotFoundError:
+        print("The file does not exist.")
  
-            
-        
-        
-      
-        
- 
- 
- 
- 
- #customer login
-
+  #customer login
+def cutomer_login():
+    user_name=input("enter user name")
+    user_password=input("enter user password")
     
-      
+    try:
+        with open("acc details.txt" ,"r") as file:
+            for line in file:
+                data=line.strip().split()
+                if len(data) >=4 :
+                    cus_user=data[1]
+                    cus_pass=data[2]
+                    account_num=data[0]
+                    if user_name ==cus_user and user_password==cus_pass :
+                        print(f"Login sucessful {user_name} {account_num} welcome \n")
+                        cutomer_menu(account_num)
+                        return
+                    else:
+                        print("invalid username or password \n ")    
+    
+    except FileNotFoundError:
+        print(" file not found.")                    
         
- 
+ #deposite
+def deposit(account_num):
+   
+    
+    try:
+        amount = float(input("Enter deposit amount: "))
+        if amount <= 0:
+            print("Amount must be positive.")
+            return
+    except ValueError:
+        print("Invalid amount entered.")
+        return
 
- 
+  
+    updated_lines = []
+
+    try:
+        with open("acc details.txt", "r") as file:
+            for line in file:
+                data = line.strip().split()
+                if data[0] == account_num:
+                    current_balance = float(data[3])
+                    new_balance = current_balance + amount
+                    data[3] = str(new_balance)
+                    updated_line = "  ".join(data) + "\n"
+                    updated_lines.append(updated_line)
+                    found = True
+                else:
+                    updated_lines.append(line)
+
+        if found:
+            with open("acc details.txt", "w") as file:
+                file.writelines(updated_lines)
+
+            with open("transactions.txt", "a") as file:
+                from datetime import datetime
+                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                file.write(f"{account_num}  Deposit  {amount}  {now}\n")
+
+            print(f"Deposit successful! New balance: {new_balance}")
+        else:
+            print("Account number not found.")
+
+    except FileNotFoundError:
+        print("Error: acc details.txt file not found.") 
         
+# withdraw    
+def withdraw(account_num):
+  
+    try:
+        amount = float(input("Enter withdrawal amount: "))
+        if amount <= 0:
+            print("Amount must be positive.")
+            return
+    except ValueError:
+        print("Invalid amount entered.")
+        return
+
+    updated_lines = []
+
+
+    try:
+        with open("acc details.txt", "r") as file:
+            for line in file:
+                data = line.strip().split()
+                if data[0] == account_num:  
+                    current_balance = float(data[3])
+                    
+                    if current_balance >= amount: 
+                        new_balance = current_balance - amount
+                        data[3] = str(new_balance) 
+                        updated_line = "  ".join(data) + "\n"
+                        updated_lines.append(updated_line)
+                        found = True
+                    else:
+                        print("Insufficient balance.")
+                        return
+                else:
+                    updated_lines.append(line)
+
+        if found:
+            with open("acc details.txt", "w") as file:
+                file.writelines(updated_lines)  # Write updated lines back to the file
+
+            # Log the transaction for the specific account
+            with open("transactions.txt", "a") as t_file:
+                from datetime import datetime
+                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                t_file.write(f"{account_num}  Withdrawal  {amount}  {now}\n")
+
+            print(f"Withdrawal successful! New balance: {new_balance}")
+        else:
+            print("Account number not found.")
+
+    except FileNotFoundError:
+        print("Error: acc details.txt file not found.")    
+
+
+# cutomer menu
+def cutomer_menu(account_num):
+    while True:
+        print("----CUSTOMER MENU-----") 
+        print("1.Deposit Money") 
+        print("2.Withdraw money") 
+        print("3.exit") 
+        
+        choice=input("Enter choice 1-3")
+        if choice=="1":
+            deposit(account_num)
+        elif choice =="2":
+             withdraw(account_num)
+        elif choice  =="3":    
+            pass
         
             
+         
+          
 #admin menu
 def admin_menu():
     while True:
@@ -138,7 +306,8 @@ def admin_menu():
         else:
             print("Invalid choice")
         
-    
+
+
 
 
 def menu():
@@ -155,7 +324,7 @@ def menu():
             check_admin()
         
         elif choice == "2":
-            pass
+            cutomer_login()
         
         elif choice == "3":
             break
