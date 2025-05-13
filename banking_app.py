@@ -50,7 +50,7 @@ def acc_number_create():
             if not lines:
                 return "ACC001"
             last_line = lines[-1]
-            last_acc_num = last_line.split()[2]  
+            last_acc_num = last_line.split()[0]  
             last_num = int(last_acc_num.replace("ACC", ""))
             return f"ACC{last_num + 1:03}"  
     except FileNotFoundError:
@@ -117,11 +117,11 @@ def account_create():
     
     
     with open("customer.txt","a") as file:
-        file.write(f"{account_num}   {name}   {age}    {initial_balance}      {timestamp} \n")
+        file.write(f"{account_num}      {user_name}   {name}     {age}     {password}      {initial_balance}   {nic}     \n")
         print(f"sucessfuly {name} and {account_num} created account")
         
     with open("acc details.txt","a") as file:
-        file.write(f"{account_num}  {user_name}    {password}   {initial_balance}  \n") 
+        file.write(f"{account_num}     {user_name}      {initial_balance}      {timestamp}\n") 
     
 
         
@@ -131,33 +131,53 @@ def account_create():
 
 def view_all_customers():
     try:
-        # Open the .txt file in read mode
+        
         with open("customer.txt", "r") as file:
             data = file.readlines()
         
-        # Check if data exists in the file
+        
         if  data:
             print("Customer Data:")
-            print("accnum    name     age     balance      date")
+            print("accnum    name     age        password     balance      ")
             for line in data:  
                 print(line.strip())  
         else:
            print("data not available")
     except FileNotFoundError:
         print("The file does not exist.")
- 
-  #customer login
+        
+#   any_one_transaction\
+    
+def any_one_transaction():
+    acc_num=input("Enter account number")
+    
+    try:
+        with open("transactions.txt","r")as file:
+            data=file.readlines()
+            if not data:
+                print("NO transaction")
+            for line in data:
+                if line.startswith(acc_num):
+                    print(line.strip())  
+                    
+    
+    
+    except FileNotFoundError:
+        print("file not found")                 
+
+
+  #customer login  must
 def cutomer_login():
     user_name=input("enter user name")
     user_password=input("enter user password")
     
     try:
-        with open("acc details.txt" ,"r") as file:
+        with open("customer.txt" ,"r") as file:
             for line in file:
                 data=line.strip().split()
-                if len(data) >=4 :
+                if len(data) >=7 :
                     cus_user=data[1]
-                    cus_pass=data[2]
+                    cus_pass=data[4]
                     account_num=data[0]
                     if user_name ==cus_user and user_password==cus_pass :
                         print(f"Login sucessful {user_name} {account_num} welcome \n")
@@ -190,9 +210,9 @@ def deposit(account_num):
             for line in file:
                 data = line.strip().split()
                 if data[0] == account_num:
-                    current_balance = float(data[3])
+                    current_balance = float(data[2])
                     new_balance = current_balance + amount
-                    data[3] = str(new_balance)
+                    data[2] = str(new_balance)
                     updated_line = "  ".join(data) + "\n"
                     updated_lines.append(updated_line)
                     found = True
@@ -204,9 +224,9 @@ def deposit(account_num):
                 file.writelines(updated_lines)
 
             with open("transactions.txt", "a") as file:
-                from datetime import datetime
+               
                 now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                file.write(f"{account_num}  Deposit  {amount}  {now}\n")
+                file.write(f"{account_num}  Deposit  {amount}  \n")
 
             print(f"Deposit successful! New balance: {new_balance}")
         else:
@@ -235,11 +255,11 @@ def withdraw(account_num):
             for line in file:
                 data = line.strip().split()
                 if data[0] == account_num:  
-                    current_balance = float(data[3])
+                    current_balance = float(data[2])
                     
                     if current_balance >= amount: 
                         new_balance = current_balance - amount
-                        data[3] = str(new_balance) 
+                        data[2] = str(new_balance) 
                         updated_line = "  ".join(data) + "\n"
                         updated_lines.append(updated_line)
                         found = True
@@ -251,9 +271,9 @@ def withdraw(account_num):
 
         if found:
             with open("acc details.txt", "w") as file:
-                file.writelines(updated_lines)  # Write updated lines back to the file
+                file.writelines(updated_lines)  
 
-            # Log the transaction for the specific account
+            #  transaction file
             with open("transactions.txt", "a") as t_file:
                 from datetime import datetime
                 now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -268,7 +288,7 @@ def withdraw(account_num):
 
 
 # cutomer menu
-def cutomer_menu(account_num):
+def customer_menu(account_num):
     while True:
         print("----CUSTOMER MENU-----") 
         print("1.Deposit Money") 
@@ -280,8 +300,11 @@ def cutomer_menu(account_num):
             deposit(account_num)
         elif choice =="2":
              withdraw(account_num)
-        elif choice  =="3":    
-            pass
+        
+        elif choice=="3":
+            break
+        else:
+            print("invalid choice")
         
             
          
@@ -293,7 +316,9 @@ def admin_menu():
     
         print("1.account create")
         print("2.view all customer")
-        print("3.exit")
+        print("3.any_one_transaction")
+        
+        print("4.exit")
         
         
         choice=input("Enter Choice")
@@ -302,7 +327,9 @@ def admin_menu():
         elif choice == "2":
            view_all_customers()
         elif choice == "3":
-            break
+            any_one_transaction()
+        elif choice =="4":
+            break    
         else:
             print("Invalid choice")
         
